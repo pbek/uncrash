@@ -1,5 +1,11 @@
 # Uncrash Changelog
 
+## 0.0.2
+
+- Fixed CPU frequency control in systemd daemon by replacing interactive privilege escalation (pkexec/sudo) with direct sysfs file writes
+- Daemon now properly writes to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq` as root
+- Improved error reporting with per-CPU success/failure messages
+
 ## 0.0.1
 
 - GPU power monitoring (NVIDIA via nvidia-smi, AMD via sysfs)

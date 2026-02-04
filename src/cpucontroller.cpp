@@ -2,7 +2,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFile>
-#include <QProcess>
+#include <QTextStream>
 
 CpuController::CpuController(QObject *parent) : QObject(parent) {
   m_currentMaxFrequency = readCurrentMaxFrequency();
@@ -66,38 +66,56 @@ bool CpuController::setCpuMaxFrequency(double frequencyGHz) {
   // Convert GHz to KHz for sysfs
   qint64 frequencyKHz = static_cast<qint64>(frequencyGHz * 1000000);
 
-  // Create a shell command that writes to all CPU frequency files
-  QString command =
-      QString("for cpu in "
-              "/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do "
-              "[ -f \"$cpu\" ] && echo %1 > \"$cpu\"; "
-              "done")
-          .arg(frequencyKHz);
+  // Try to write directly to sysfs files (works when running as root)
+  QDir cpuDir("/sys/devices/system/cpu");
+  QStringList cpuDirs = cpuDir.entryList(QStringList() << "cpu*", QDir::Dirs);
 
-  // Use pkexec with sh -c to execute the command
-  QProcess process;
-  process.start("pkexec", QStringList() << "sh" << "-c" << command);
-  process.waitForFinished(10000);
+  bool anySuccess = false;
+  int successCount = 0;
+  int totalCount = 0;
 
-  if (process.exitCode() == 0) {
-    return true;
-  } else {
-    QString errorOutput = QString::fromUtf8(process.readAllStandardError());
-    qWarning() << "Failed to set CPU frequency:" << errorOutput;
+  for (const QString &cpuDirName : cpuDirs) {
+    QString freqPath =
+        QString("/sys/devices/system/cpu/%1/cpufreq/scaling_max_freq")
+            .arg(cpuDirName);
+    QFile file(freqPath);
 
-    // If pkexec fails, try with sudo as fallback
-    QProcess sudoProcess;
-    sudoProcess.start("sudo", QStringList() << "sh" << "-c" << command);
-    sudoProcess.waitForFinished(10000);
+    if (!file.exists()) {
+      continue; // Skip if cpufreq not available for this CPU
+    }
 
-    if (sudoProcess.exitCode() == 0) {
-      return true;
+    totalCount++;
+
+    if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+      QTextStream out(&file);
+      out << frequencyKHz;
+      file.close();
+
+      if (file.error() == QFile::NoError) {
+        anySuccess = true;
+        successCount++;
+      } else {
+        qWarning() << "Error writing to" << freqPath << ":"
+                   << file.errorString();
+      }
     } else {
-      qWarning() << "Failed to set CPU frequency with sudo:"
-                 << QString::fromUtf8(sudoProcess.readAllStandardError());
-      return false;
+      qWarning() << "Failed to open" << freqPath << ":" << file.errorString();
     }
   }
+
+  if (totalCount == 0) {
+    qWarning() << "No CPU frequency control files found";
+    return false;
+  }
+
+  if (anySuccess) {
+    qDebug() << "Successfully set frequency on" << successCount << "of"
+             << totalCount << "CPUs";
+    return true;
+  }
+
+  qWarning() << "Failed to set frequency on any CPU";
+  return false;
 }
 
 double CpuController::readCurrentMaxFrequency() {
