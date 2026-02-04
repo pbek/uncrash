@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" version="1.1" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Shield gradient (protection theme) -->
+    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#357ABD;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2E5A8A;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Inner glow gradient -->
+    <radialGradient id="glowGradient" cx="50%" cy="40%">
+      <stop offset="0%" style="stop-color:#7EC8FF;stop-opacity:0.8" />
+      <stop offset="50%" style="stop-color:#4A90E2;stop-opacity:0.4" />
+      <stop offset="100%" style="stop-color:#2E5A8A;stop-opacity:0" />
+    </radialGradient>
+
+    <!-- Power symbol gradient -->
+    <linearGradient id="powerGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFC107;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF9800;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Warning/Alert gradient for threshold indicator -->
+    <linearGradient id="alertGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF5252;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D32F2F;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5"/>
+      <feOffset dx="0" dy="3" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.4"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Inner shadow for depth -->
+    <filter id="innerShadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="2" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.3" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feComposite in="SourceGraphic" in2="shadow" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Background glow -->
+  <circle cx="64" cy="64" r="60" fill="url(#glowGradient)" opacity="0.3"/>
+
+  <!-- Main shield shape -->
+  <g filter="url(#shadow)">
+    <path d="M 64 14 
+             C 64 14, 90 22, 100 32
+             C 104 36, 106 42, 106 50
+             L 106 68
+             C 106 86, 96 100, 64 114
+             C 32 100, 22 86, 22 68
+             L 22 50
+             C 22 42, 24 36, 28 32
+             C 38 22, 64 14, 64 14 Z"
+          fill="url(#shieldGradient)"
+          stroke="#1A3A5C"
+          stroke-width="2"
+          stroke-linejoin="round"/>
+    
+    <!-- Shield inner border highlight -->
+    <path d="M 64 18
+             C 64 18, 88 25, 96 34
+             C 100 38, 102 43, 102 50
+             L 102 68
+             C 102 84, 93 97, 64 110
+             C 35 97, 26 84, 26 68
+             L 26 50
+             C 26 43, 28 38, 32 34
+             C 40 25, 64 18, 64 18 Z"
+          fill="none"
+          stroke="#6BB6FF"
+          stroke-width="1.5"
+          opacity="0.4"/>
+  </g>
+
+  <!-- CPU chip icon (top section) -->
+  <g transform="translate(64,42)">
+    <!-- Chip body -->
+    <rect x="-12" y="-10" width="24" height="20" rx="2" 
+          fill="#2C3E50" stroke="#1A252F" stroke-width="1.5"/>
+    
+    <!-- Chip contacts (pins) -->
+    <g stroke="#34495E" stroke-width="1.5" stroke-linecap="round">
+      <!-- Left pins -->
+      <line x1="-12" y1="-6" x2="-15" y2="-6"/>
+      <line x1="-12" y1="0" x2="-15" y2="0"/>
+      <line x1="-12" y1="6" x2="-15" y2="6"/>
+      <!-- Right pins -->
+      <line x1="12" y1="-6" x2="15" y2="-6"/>
+      <line x1="12" y1="0" x2="15" y2="0"/>
+      <line x1="12" y1="6" x2="15" y2="6"/>
+    </g>
+    
+    <!-- CPU text/label -->
+    <text x="0" y="2" font-family="monospace" font-size="8" font-weight="bold"
+          fill="#7EC8FF" text-anchor="middle">CPU</text>
+  </g>
+
+  <!-- Power/Lightning bolt icon (center) -->
+  <g transform="translate(64,68)" filter="url(#shadow)">
+    <!-- Lightning bolt -->
+    <path d="M 2 -16 L -8 2 L -2 2 L -4 16 L 10 -4 L 4 -4 Z"
+          fill="url(#powerGradient)"
+          stroke="#E65100"
+          stroke-width="1.5"
+          stroke-linejoin="round"/>
+    
+    <!-- Inner highlight -->
+    <path d="M 0 -14 L -6 0 L -2 0 L -3 12 L 8 -3 L 4 -3 Z"
+          fill="#FFE082"
+          opacity="0.6"/>
+  </g>
+
+  <!-- GPU indicator (bottom section) -->
+  <g transform="translate(64,94)">
+    <!-- GPU chip base -->
+    <rect x="-14" y="-8" width="28" height="16" rx="2"
+          fill="#37474F" stroke="#1C2328" stroke-width="1.5"/>
+    
+    <!-- Heat sink lines -->
+    <g stroke="#546E7A" stroke-width="1" opacity="0.7">
+      <line x1="-10" y1="-6" x2="-10" y2="6"/>
+      <line x1="-5" y1="-6" x2="-5" y2="6"/>
+      <line x1="0" y1="-6" x2="0" y2="6"/>
+      <line x1="5" y1="-6" x2="5" y2="6"/>
+      <line x1="10" y1="-6" x2="10" y2="6"/>
+    </g>
+    
+    <!-- GPU text -->
+    <text x="0" y="2" font-family="monospace" font-size="7" font-weight="bold"
+          fill="#90CAF9" text-anchor="middle">GPU</text>
+  </g>
+
+  <!-- Protection checkmark (top right) -->
+  <g transform="translate(88,30)" filter="url(#shadow)">
+    <circle cx="0" cy="0" r="12" fill="#4CAF50" stroke="#2E7D32" stroke-width="2"/>
+    
+    <!-- Checkmark -->
+    <path d="M -4 0 L -1 4 L 5 -4"
+          fill="none"
+          stroke="#FFFFFF"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- Monitoring indicator (bottom right) -->
+  <g transform="translate(92,100)">
+    <!-- Activity monitor circle -->
+    <circle cx="0" cy="0" r="10" fill="#263238" stroke="#1A252F" stroke-width="1.5"/>
+    
+    <!-- Heartbeat/activity line -->
+    <path d="M -6 0 L -4 0 L -2 -4 L 0 4 L 2 -2 L 4 0 L 6 0"
+          fill="none"
+          stroke="#64FFDA"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- Subtle outer glow -->
+  <path d="M 64 14 
+           C 64 14, 90 22, 100 32
+           C 104 36, 106 42, 106 50
+           L 106 68
+           C 106 86, 96 100, 64 114
+           C 32 100, 22 86, 22 68
+           L 22 50
+           C 22 42, 24 36, 28 32
+           C 38 22, 64 14, 64 14 Z"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="1"
+        opacity="0.2"/>
+</svg>

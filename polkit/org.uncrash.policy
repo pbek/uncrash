@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Uncrash</vendor>
+  <vendor_url>https://github.com/pbek/uncrash</vendor_url>
+
+  <action id="org.uncrash.set-cpu-frequency">
+    <description>Set CPU frequency limits</description>
+    <message>Authentication is required to set CPU frequency limits</message>
+    <icon_name>uncrash</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/run/current-system/sw/bin/uncrash-set-cpu-freq</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>

@@ -1,0 +1,47 @@
+name: 🏗️ Build Uncrash
+
+on:
+  push:
+    branches-ignore:
+      - release
+    tags-ignore:
+      - "*"
+    paths:
+      - "src/**"
+      - "flake.*"
+      - "devenv.*"
+      - "package.nix"
+      - ".github/workflows/build-nix.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "flake.*"
+      - "devenv.*"
+      - "package.nix"
+      - ".github/workflows/build-nix.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 🏗️ Build ${{ matrix.just-recipe }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        just-recipe: ["nix-build"]
+        os: ["ubuntu-latest"]
+    steps:
+      - name: ⚙️ Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
+      - name: 🔒 Cache dependencies
+        uses: cachix/cachix-action@v16
+        with:
+          name: devenv
+      - name: 🔧 Install devenv.sh
+        run: nix profile add nixpkgs#devenv
+      - name: 🧰 Checkout code
+        uses: actions/checkout@v6
+      - name: 🚧 Build nix package
+        run: devenv shell just ${{ matrix.just-recipe }}

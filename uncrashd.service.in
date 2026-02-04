@@ -1,0 +1,29 @@
+[Unit]
+Description=Uncrash System Protection Daemon
+Documentation=https://github.com/youruser/uncrash
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=@out@/bin/uncrashd
+Restart=on-failure
+RestartSec=5s
+
+# Run as root (needed for CPU frequency control)
+User=root
+Group=root
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/etc/uncrash /sys/devices/system/cpu
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=uncrashd
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+build/
+.devenv/
+.direnv/
+.devenv.flake.nix
+*.user
+*.autosave
+*~
+.DS_Store
+compile_commands.json
+result
+result-*
+.pre-commit-config.yaml
+.shared
+cmake-build-debug

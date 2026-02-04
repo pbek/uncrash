@@ -1,0 +1,51 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+  <interface name="org.uncrash.Daemon">
+    <!-- Properties -->
+    <property name="GpuPower" type="d" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
+    <property name="GpuPowerThreshold" type="d" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
+    <property name="CurrentMaxFrequency" type="d" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
+    <property name="MaxFrequency" type="d" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
+    <property name="RegulationEnabled" type="b" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
+    <property name="AutoProtection" type="b" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
+    <property name="ThresholdExceeded" type="b" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="true"/>
+    </property>
+
+    <!-- Methods -->
+    <method name="ApplyFrequencyLimit">
+      <arg name="success" type="b" direction="out"/>
+    </method>
+    <method name="RemoveFrequencyLimit">
+      <arg name="success" type="b" direction="out"/>
+    </method>
+    <method name="GetStatus">
+      <arg name="status" type="a{sv}" direction="out"/>
+    </method>
+
+    <!-- Signals -->
+    <signal name="GpuPowerChanged">
+      <arg name="power" type="d"/>
+    </signal>
+    <signal name="ThresholdExceededChanged">
+      <arg name="exceeded" type="b"/>
+    </signal>
+    <signal name="FrequencyLimitApplied">
+      <arg name="frequency" type="d"/>
+    </signal>
+    <signal name="FrequencyLimitRemoved"/>
+  </interface>
+</node>

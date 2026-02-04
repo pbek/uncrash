@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=Uncrash
+GenericName=Uncrash
+Comment=Trys to find ways to prevent system crashes
+Exec=uncrash
+Icon=uncrash
+Terminal=false
+Type=Application
+Categories=System;Settings;Qt;KDE;
+Keywords=crash;system;stability;maintenance;
+StartupNotify=true
+StartupWMClass=uncrash
+X-KDE-StartupNotify=true
+X-DBUS-StartupType=Unique
