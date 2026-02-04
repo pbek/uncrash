@@ -21,8 +21,8 @@ public:
   void setMaxFrequency(double frequency);
   void setRegulationEnabled(bool enabled);
 
-  Q_INVOKABLE void applyFrequencyLimit();
-  Q_INVOKABLE void removeFrequencyLimit();
+  void applyFrequencyLimit();
+  void removeFrequencyLimit();
 
 signals:
   void maxFrequencyChanged();
