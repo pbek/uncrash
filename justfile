@@ -93,6 +93,66 @@ nix-check:
     echo ""
     echo "✓ Build appears successful!"
 
+# Show systemd service logs
+logs:
+    journalctl -u uncrashd -f
+
+# Stop the systemd service
+[group('daemon')]
+daemon-stop:
+    sudo systemctl stop uncrashd
+
+# Start the systemd service
+[group('daemon')]
+daemon-start:
+    sudo systemctl start uncrashd
+
+# Restart the systemd service
+[group('daemon')]
+daemon-restart:
+    sudo systemctl restart uncrashd
+
+# Check daemon service status
+[group('daemon')]
+daemon-status:
+    systemctl status uncrashd
+
+# Run locally built daemon (requires stopping service first)
+[group('daemon')]
+daemon-run-local: build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Running locally built daemon as root..."
+    echo "Make sure to stop the system service first with: just daemon-stop"
+    if systemctl is-active --quiet uncrashd; then
+        echo "⚠️  Warning: System daemon is still running!"
+        echo "Stop it with: just daemon-stop"
+        exit 1
+    fi
+    sudo ./build/uncrashd
+
+# Run nix-built daemon (requires stopping service first)
+[group('daemon')]
+daemon-run-nix: nix-build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Running nix-built daemon as root..."
+    echo "Make sure to stop the system service first with: just daemon-stop"
+    if systemctl is-active --quiet uncrashd; then
+        echo "⚠️  Warning: System daemon is still running!"
+        echo "Stop it with: just daemon-stop"
+        exit 1
+    fi
+    if [ ! -e result/bin/uncrashd ]; then
+        echo "❌ result/bin/uncrashd not found. Build failed."
+        exit 1
+    fi
+    sudo ./result/bin/uncrashd
+
+# Alias for daemon-run-nix
+
+alias nix-run-daemon := daemon-run-nix
+
 # Apply a git patch to the project
 [group('patches')]
 git-apply-patch:
