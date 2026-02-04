@@ -1,7 +1,14 @@
 # Uncrash Changelog
 
+## 0.0.3
+
+### Changed
+- Increased default window height from 600px to 800px for better visibility
+- Increased minimum window height from 400px to 700px to ensure all UI elements are visible
+
 ## 0.0.2
 
+### Fixed
 - Fixed CPU frequency control in systemd daemon by replacing interactive privilege escalation (pkexec/sudo) with direct sysfs file writes
 - Daemon now properly writes to `/sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq` as root
 - Improved error reporting with per-CPU success/failure messages

@@ -9,7 +9,7 @@ Kirigami.ApplicationWindow {
     width: settingsManager.windowWidth
     height: settingsManager.windowHeight
     minimumWidth: 600
-    minimumHeight: 400
+    minimumHeight: 700
 
     // Save window size when it changes
     onWidthChanged: {

@@ -17,7 +17,7 @@ void SettingsManager::setWindowWidth(int width) {
 }
 
 int SettingsManager::windowHeight() const {
-  return m_settings.value("window/height", 600).toInt();
+  return m_settings.value("window/height", 800).toInt();
 }
 
 void SettingsManager::setWindowHeight(int height) {
