@@ -23,6 +23,7 @@ TemperatureMonitor::TemperatureMonitor(QObject *parent)
   // Find motherboard sensor hwmon (support various chipsets)
   QStringList motherboardDrivers = {
       "asus_wmi_sensors", // ASUS motherboards
+      "gigabyte_wmi",     // Gigabyte motherboards (WMI interface)
       "nct6775",          // Nuvoton NCT6775/6776/6779
       "it87",             // ITE IT87xx
       "w83627ehf",        // Winbond W83627EHF

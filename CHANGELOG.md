@@ -1,5 +1,13 @@
 # Uncrash Changelog
 
+## 0.0.5
+
+### Fixed
+
+- Added support for Gigabyte motherboard temperature monitoring via `gigabyte_wmi` driver
+  - Fixes motherboard temperature detection on Gigabyte B550M AORUS ELITE and similar boards
+  - Driver was previously not included in the list of supported motherboard sensors
+
 ## 0.0.4
 
 ### Added
