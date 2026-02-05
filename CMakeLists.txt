@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 project(
   uncrash
-  VERSION 0.0.3
+  VERSION 0.0.4
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -47,7 +47,9 @@ add_executable(
   src/cpucontroller.cpp
   src/cpucontroller.h
   src/systemprotector.cpp
-  src/systemprotector.h)
+  src/systemprotector.h
+  src/temperaturemonitor.cpp
+  src/temperaturemonitor.h)
 
 target_include_directories(uncrashd PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -68,7 +70,9 @@ qt_add_executable(
   src/client/daemonclient.cpp
   src/client/daemonclient.h
   src/settingsmanager.cpp
-  src/settingsmanager.h)
+  src/settingsmanager.h
+  src/systemtrayicon.cpp
+  src/systemtrayicon.h)
 
 qt_policy(SET QTP0001 NEW)
 qt_policy(SET QTP0004 NEW)
