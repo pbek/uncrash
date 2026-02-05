@@ -8,6 +8,8 @@
 
 Uncrash is a **system protection daemon** that prevents desktop crashes caused by GPU power spikes, VRM overheating, and motherboard power delivery issues.
 
+![Uncrash Screenshot](uncrash.webp)
+
 ## 🎯 What Does It Do?
 
 Uncrash monitors your GPU power consumption in real-time and automatically throttles CPU frequency when the GPU exceeds a configurable power threshold. This prevents system crashes by reducing total power draw when your hardware is under stress.
