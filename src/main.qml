@@ -250,12 +250,20 @@ Kirigami.ApplicationWindow {
                                 Controls.Label {
                                     text: {
                                         let speed = daemonClient?.gpuFanSpeed ?? 0;
-                                        if (speed >= 1000) {
+                                        let vendor = daemonClient?.gpuVendor ?? "";
+
+                                        if (speed <= 0) {
+                                            return "Idle";
+                                        }
+
+                                        // AMD GPUs report RPM, NVIDIA reports percentage
+                                        if (vendor === "AMD") {
                                             return speed + " RPM";
-                                        } else if (speed > 0) {
+                                        } else if (vendor === "NVIDIA") {
                                             return speed + " %";
                                         } else {
-                                            return "Idle";
+                                            // Fallback: if >= 1000, assume RPM, otherwise percentage
+                                            return speed >= 1000 ? speed + " RPM" : speed + " %";
                                         }
                                     }
                                 }

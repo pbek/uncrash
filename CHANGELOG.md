@@ -1,5 +1,15 @@
 # Uncrash Changelog
 
+## 0.0.6
+
+### Fixed
+
+- Fixed AMD GPU fan speed display showing incorrect percentage instead of RPM
+  - AMD GPUs now always display fan speed in RPM (e.g., "949 RPM" instead of "949%")
+  - NVIDIA GPUs continue to display fan speed as percentage
+  - Uses GPU vendor detection to determine correct display format
+  - Fallback logic: values >= 1000 shown as RPM, otherwise as percentage
+
 ## 0.0.5
 
 ### Fixed
