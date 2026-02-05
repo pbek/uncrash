@@ -54,6 +54,28 @@ void DaemonClient::connectToService() {
   bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
               "ThresholdExceededChanged", this,
               SLOT(onThresholdExceededChanged(bool)));
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "CpuLimitAppliedChanged", this,
+              SLOT(onCpuLimitAppliedChanged(bool)));
+
+  // Connect to temperature signals
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "GpuTemperatureChanged", this,
+              SLOT(onGpuTemperatureChanged(double)));
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "GpuFanSpeedChanged", this, SLOT(onGpuFanSpeedChanged(int)));
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "CpuTemperatureChanged", this,
+              SLOT(onCpuTemperatureChanged(double)));
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "CpuFanSpeedChanged", this, SLOT(onCpuFanSpeedChanged(int)));
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "MotherboardTemperatureChanged", this,
+              SLOT(onMotherboardTemperatureChanged(double)));
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "GpuVendorChanged", this, SLOT(onGpuVendorChanged(QString)));
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "GpuNameChanged", this, SLOT(onGpuNameChanged(QString)));
 
   updateConnectionStatus(true);
   refreshStatus();
@@ -111,6 +133,9 @@ void DaemonClient::applyFrequencyLimit() {
   QDBusReply<bool> reply = m_interface->call("ApplyFrequencyLimit");
   if (!reply.isValid()) {
     emit error("Failed to apply frequency limit: " + reply.error().message());
+  } else {
+    // Refresh status to update thresholdExceeded and other properties
+    refreshStatus();
   }
 }
 
@@ -123,6 +148,9 @@ void DaemonClient::removeFrequencyLimit() {
   QDBusReply<bool> reply = m_interface->call("RemoveFrequencyLimit");
   if (!reply.isValid()) {
     emit error("Failed to remove frequency limit: " + reply.error().message());
+  } else {
+    // Refresh status to update thresholdExceeded and other properties
+    refreshStatus();
   }
 }
 
@@ -142,6 +170,16 @@ void DaemonClient::refreshStatus() {
     m_regulationEnabled = status["regulationEnabled"].toBool();
     m_autoProtection = status["autoProtection"].toBool();
     m_thresholdExceeded = status["thresholdExceeded"].toBool();
+    m_cpuLimitApplied = status["cpuLimitApplied"].toBool();
+
+    // Read temperature data
+    m_gpuTemperature = status["gpuTemperature"].toDouble();
+    m_gpuFanSpeed = status["gpuFanSpeed"].toInt();
+    m_cpuTemperature = status["cpuTemperature"].toDouble();
+    m_cpuFanSpeed = status["cpuFanSpeed"].toInt();
+    m_motherboardTemperature = status["motherboardTemperature"].toDouble();
+    m_gpuVendor = status["gpuVendor"].toString();
+    m_gpuName = status["gpuName"].toString();
 
     emit gpuPowerChanged();
     emit gpuPowerThresholdChanged();
@@ -150,6 +188,16 @@ void DaemonClient::refreshStatus() {
     emit regulationEnabledChanged();
     emit autoProtectionChanged();
     emit thresholdExceededChanged();
+    emit cpuLimitAppliedChanged();
+
+    // Emit temperature signals
+    emit gpuTemperatureChanged();
+    emit gpuFanSpeedChanged();
+    emit cpuTemperatureChanged();
+    emit cpuFanSpeedChanged();
+    emit motherboardTemperatureChanged();
+    emit gpuVendorChanged();
+    emit gpuNameChanged();
   }
 }
 
@@ -188,6 +236,11 @@ void DaemonClient::onThresholdExceededChanged(bool exceeded) {
   emit thresholdExceededChanged();
 }
 
+void DaemonClient::onCpuLimitAppliedChanged(bool applied) {
+  m_cpuLimitApplied = applied;
+  emit cpuLimitAppliedChanged();
+}
+
 void DaemonClient::onServiceOwnerChanged(const QString &name,
                                          const QString & /*oldOwner*/,
                                          const QString &newOwner) {
@@ -199,5 +252,55 @@ void DaemonClient::onServiceOwnerChanged(const QString &name,
       qInfo() << "Uncrash daemon connected";
       connectToService();
     }
+  }
+}
+
+// Temperature slot implementations
+void DaemonClient::onGpuTemperatureChanged(double temperature) {
+  if (m_gpuTemperature != temperature) {
+    m_gpuTemperature = temperature;
+    emit gpuTemperatureChanged();
+  }
+}
+
+void DaemonClient::onGpuFanSpeedChanged(int speed) {
+  if (m_gpuFanSpeed != speed) {
+    m_gpuFanSpeed = speed;
+    emit gpuFanSpeedChanged();
+  }
+}
+
+void DaemonClient::onCpuTemperatureChanged(double temperature) {
+  if (m_cpuTemperature != temperature) {
+    m_cpuTemperature = temperature;
+    emit cpuTemperatureChanged();
+  }
+}
+
+void DaemonClient::onCpuFanSpeedChanged(int speed) {
+  if (m_cpuFanSpeed != speed) {
+    m_cpuFanSpeed = speed;
+    emit cpuFanSpeedChanged();
+  }
+}
+
+void DaemonClient::onMotherboardTemperatureChanged(double temperature) {
+  if (m_motherboardTemperature != temperature) {
+    m_motherboardTemperature = temperature;
+    emit motherboardTemperatureChanged();
+  }
+}
+
+void DaemonClient::onGpuVendorChanged(const QString &vendor) {
+  if (m_gpuVendor != vendor) {
+    m_gpuVendor = vendor;
+    emit gpuVendorChanged();
+  }
+}
+
+void DaemonClient::onGpuNameChanged(const QString &name) {
+  if (m_gpuName != name) {
+    m_gpuName = name;
+    emit gpuNameChanged();
   }
 }

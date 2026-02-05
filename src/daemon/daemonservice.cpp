@@ -8,6 +8,7 @@ DaemonService::DaemonService(QObject *parent) : QObject(parent) {
   m_protector = new SystemProtector(this);
   m_powerMonitor = m_protector->powerMonitor();
   m_cpuController = m_protector->cpuController();
+  m_temperatureMonitor = new TemperatureMonitor(this);
 
   // Connect internal signals to DBus signals
   connect(m_powerMonitor, &PowerMonitor::gpuPowerChanged, this,
@@ -23,9 +24,32 @@ DaemonService::DaemonService(QObject *parent) : QObject(parent) {
           &DaemonService::onMaxFrequencyChanged);
   connect(m_cpuController, &CpuController::regulationEnabledChanged, this,
           &DaemonService::onRegulationEnabledChanged);
+  connect(m_cpuController, &CpuController::cpuLimitAppliedChanged, this,
+          &DaemonService::onCpuLimitAppliedChanged);
 
   connect(m_protector, &SystemProtector::autoProtectionChanged, this,
           &DaemonService::onAutoProtectionChanged);
+
+  // Connect temperature monitor signals
+  connect(m_temperatureMonitor, &TemperatureMonitor::gpuTemperatureChanged,
+          this, &DaemonService::GpuTemperatureChanged);
+  connect(m_temperatureMonitor, &TemperatureMonitor::cpuTemperatureChanged,
+          this, &DaemonService::CpuTemperatureChanged);
+  connect(m_temperatureMonitor,
+          &TemperatureMonitor::motherboardTemperatureChanged, this,
+          &DaemonService::MotherboardTemperatureChanged);
+  connect(m_temperatureMonitor, &TemperatureMonitor::fanSpeedsChanged, this,
+          [this]() {
+            emit CpuFanSpeedChanged(cpuFanSpeed());
+            emit GpuFanSpeedChanged(gpuFanSpeed());
+          });
+
+  // Start temperature monitoring (update every 2 seconds)
+  m_temperatureMonitor->startMonitoring(2000);
+
+  // Emit initial GPU vendor/name
+  emit GpuVendorChanged(m_temperatureMonitor->gpuVendor());
+  emit GpuNameChanged(m_temperatureMonitor->gpuName());
 
   // Load settings
   loadSettings();
@@ -82,6 +106,39 @@ bool DaemonService::thresholdExceeded() const {
   return m_powerMonitor->thresholdExceeded();
 }
 
+bool DaemonService::cpuLimitApplied() const {
+  return m_cpuController->cpuLimitApplied();
+}
+
+// Temperature getters
+double DaemonService::gpuTemperature() const {
+  return m_temperatureMonitor->gpuTemperature();
+}
+
+int DaemonService::gpuFanSpeed() const {
+  return m_temperatureMonitor->gpuFanSpeed();
+}
+
+double DaemonService::cpuTemperature() const {
+  return m_temperatureMonitor->cpuTemperature();
+}
+
+int DaemonService::cpuFanSpeed() const {
+  return m_temperatureMonitor->cpuFanSpeed();
+}
+
+double DaemonService::motherboardTemperature() const {
+  return m_temperatureMonitor->motherboardTemperature();
+}
+
+QString DaemonService::gpuVendor() const {
+  return m_temperatureMonitor->gpuVendor();
+}
+
+QString DaemonService::gpuName() const {
+  return m_temperatureMonitor->gpuName();
+}
+
 // Property setters
 void DaemonService::setGpuPowerThreshold(double threshold) {
   m_powerMonitor->setGpuPowerThreshold(threshold);
@@ -125,6 +182,17 @@ QVariantMap DaemonService::GetStatus() {
   status["regulationEnabled"] = regulationEnabled();
   status["autoProtection"] = autoProtection();
   status["thresholdExceeded"] = thresholdExceeded();
+  status["cpuLimitApplied"] = cpuLimitApplied();
+
+  // Add temperature data
+  status["gpuTemperature"] = gpuTemperature();
+  status["gpuFanSpeed"] = gpuFanSpeed();
+  status["cpuTemperature"] = cpuTemperature();
+  status["cpuFanSpeed"] = cpuFanSpeed();
+  status["motherboardTemperature"] = motherboardTemperature();
+  status["gpuVendor"] = gpuVendor();
+  status["gpuName"] = gpuName();
+
   return status;
 }
 
@@ -153,6 +221,10 @@ void DaemonService::onAutoProtectionChanged() {
 
 void DaemonService::onThresholdExceededChanged() {
   emit ThresholdExceededChanged(thresholdExceeded());
+}
+
+void DaemonService::onCpuLimitAppliedChanged() {
+  emit CpuLimitAppliedChanged(cpuLimitApplied());
 }
 
 void DaemonService::loadSettings() {

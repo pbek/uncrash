@@ -20,7 +20,21 @@ class DaemonClient : public QObject {
                  NOTIFY autoProtectionChanged)
   Q_PROPERTY(bool thresholdExceeded READ thresholdExceeded NOTIFY
                  thresholdExceededChanged)
+  Q_PROPERTY(
+      bool cpuLimitApplied READ cpuLimitApplied NOTIFY cpuLimitAppliedChanged)
   Q_PROPERTY(bool connected READ connected NOTIFY connectedChanged)
+
+  // Temperature properties
+  Q_PROPERTY(
+      double gpuTemperature READ gpuTemperature NOTIFY gpuTemperatureChanged)
+  Q_PROPERTY(int gpuFanSpeed READ gpuFanSpeed NOTIFY gpuFanSpeedChanged)
+  Q_PROPERTY(
+      double cpuTemperature READ cpuTemperature NOTIFY cpuTemperatureChanged)
+  Q_PROPERTY(int cpuFanSpeed READ cpuFanSpeed NOTIFY cpuFanSpeedChanged)
+  Q_PROPERTY(double motherboardTemperature READ motherboardTemperature NOTIFY
+                 motherboardTemperatureChanged)
+  Q_PROPERTY(QString gpuVendor READ gpuVendor NOTIFY gpuVendorChanged)
+  Q_PROPERTY(QString gpuName READ gpuName NOTIFY gpuNameChanged)
 
 public:
   explicit DaemonClient(QObject *parent = nullptr);
@@ -33,7 +47,17 @@ public:
   bool regulationEnabled() const { return m_regulationEnabled; }
   bool autoProtection() const { return m_autoProtection; }
   bool thresholdExceeded() const { return m_thresholdExceeded; }
+  bool cpuLimitApplied() const { return m_cpuLimitApplied; }
   bool connected() const { return m_connected; }
+
+  // Temperature getters
+  double gpuTemperature() const { return m_gpuTemperature; }
+  int gpuFanSpeed() const { return m_gpuFanSpeed; }
+  double cpuTemperature() const { return m_cpuTemperature; }
+  int cpuFanSpeed() const { return m_cpuFanSpeed; }
+  double motherboardTemperature() const { return m_motherboardTemperature; }
+  QString gpuVendor() const { return m_gpuVendor; }
+  QString gpuName() const { return m_gpuName; }
 
   // Property setters
   void setGpuPowerThreshold(double threshold);
@@ -53,8 +77,18 @@ signals:
   void regulationEnabledChanged();
   void autoProtectionChanged();
   void thresholdExceededChanged();
+  void cpuLimitAppliedChanged();
   void connectedChanged();
   void error(const QString &message);
+
+  // Temperature signals
+  void gpuTemperatureChanged();
+  void gpuFanSpeedChanged();
+  void cpuTemperatureChanged();
+  void cpuFanSpeedChanged();
+  void motherboardTemperatureChanged();
+  void gpuVendorChanged();
+  void gpuNameChanged();
 
 private slots:
   void onGpuPowerChanged(double power);
@@ -64,8 +98,17 @@ private slots:
   void onRegulationEnabledChanged(bool enabled);
   void onAutoProtectionChanged(bool enabled);
   void onThresholdExceededChanged(bool exceeded);
+  void onCpuLimitAppliedChanged(bool applied);
   void onServiceOwnerChanged(const QString &name, const QString &oldOwner,
                              const QString &newOwner);
+  // Temperature slots
+  void onGpuTemperatureChanged(double temperature);
+  void onGpuFanSpeedChanged(int speed);
+  void onCpuTemperatureChanged(double temperature);
+  void onCpuFanSpeedChanged(int speed);
+  void onMotherboardTemperatureChanged(double temperature);
+  void onGpuVendorChanged(const QString &vendor);
+  void onGpuNameChanged(const QString &name);
 
 private:
   void connectToService();
@@ -80,5 +123,15 @@ private:
   bool m_regulationEnabled = true;
   bool m_autoProtection = true;
   bool m_thresholdExceeded = false;
+  bool m_cpuLimitApplied = false;
   bool m_connected = false;
+
+  // Temperature data
+  double m_gpuTemperature = 0.0;
+  int m_gpuFanSpeed = 0;
+  double m_cpuTemperature = 0.0;
+  int m_cpuFanSpeed = 0;
+  double m_motherboardTemperature = 0.0;
+  QString m_gpuVendor;
+  QString m_gpuName;
 };

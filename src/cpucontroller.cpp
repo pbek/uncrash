@@ -3,9 +3,16 @@
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
+#include <QTimer>
 
 CpuController::CpuController(QObject *parent) : QObject(parent) {
   m_currentMaxFrequency = readCurrentMaxFrequency();
+
+  // Set up timer to periodically update current frequency
+  m_updateTimer = new QTimer(this);
+  connect(m_updateTimer, &QTimer::timeout, this,
+          &CpuController::updateCurrentFrequency);
+  m_updateTimer->start(2000); // Update every 2 seconds
 }
 
 void CpuController::setMaxFrequency(double frequency) {
@@ -15,8 +22,8 @@ void CpuController::setMaxFrequency(double frequency) {
   m_maxFrequency = frequency;
   emit maxFrequencyChanged();
 
-  // Apply immediately if regulation is enabled
-  if (m_regulationEnabled) {
+  // If a limit is currently applied, update it to the new frequency
+  if (m_cpuLimitApplied) {
     applyFrequencyLimit();
   }
 }
@@ -44,6 +51,11 @@ void CpuController::applyFrequencyLimit() {
     qDebug() << "Applied CPU frequency limit:" << m_maxFrequency << "GHz";
     m_currentMaxFrequency = readCurrentMaxFrequency();
     emit currentMaxFrequencyChanged();
+
+    if (!m_cpuLimitApplied) {
+      m_cpuLimitApplied = true;
+      emit cpuLimitAppliedChanged();
+    }
   } else {
     qWarning() << "Failed to apply CPU frequency limit";
   }
@@ -57,6 +69,11 @@ void CpuController::removeFrequencyLimit() {
     qDebug() << "Removed CPU frequency limit";
     m_currentMaxFrequency = readCurrentMaxFrequency();
     emit currentMaxFrequencyChanged();
+
+    if (m_cpuLimitApplied) {
+      m_cpuLimitApplied = false;
+      emit cpuLimitAppliedChanged();
+    }
   } else {
     qWarning() << "Failed to remove CPU frequency limit";
   }
@@ -134,4 +151,12 @@ double CpuController::readCurrentMaxFrequency() {
   }
 
   return 0.0;
+}
+
+void CpuController::updateCurrentFrequency() {
+  double newFrequency = readCurrentMaxFrequency();
+  if (!qFuzzyCompare(m_currentMaxFrequency, newFrequency)) {
+    m_currentMaxFrequency = newFrequency;
+    emit currentMaxFrequencyChanged();
+  }
 }

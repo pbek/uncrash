@@ -11,6 +11,31 @@ Kirigami.ApplicationWindow {
     minimumWidth: 600
     minimumHeight: 700
 
+    // Signal to request application quit
+    signal quitRequested
+
+    // Menu bar
+    menuBar: Controls.MenuBar {
+        Controls.Menu {
+            title: "&File"
+            Controls.MenuItem {
+                text: "&Quit"
+                icon.name: "application-exit"
+                action: Controls.Action {
+                    text: "&Quit"
+                    shortcut: StandardKey.Quit
+                    onTriggered: root.quitRequested()
+                }
+            }
+        }
+    }
+
+    // Handle close event - hide to tray instead of quitting
+    onClosing: function (close) {
+        close.accepted = false;
+        root.hide();
+    }
+
     // Save window size when it changes
     onWidthChanged: {
         if (width >= minimumWidth) {
@@ -29,10 +54,14 @@ Kirigami.ApplicationWindow {
 
         actions: [
             Kirigami.Action {
-                text: daemonClient.autoProtection ? "Disable Auto Protection" : "Enable Auto Protection"
-                icon.name: daemonClient.autoProtection ? "dialog-ok" : "dialog-cancel"
-                enabled: daemonClient.connected
-                onTriggered: daemonClient.autoProtection = !daemonClient.autoProtection
+                text: daemonClient?.autoProtection ? "Disable Auto Protection" : "Enable Auto Protection"
+                icon.name: daemonClient?.autoProtection ? "dialog-ok" : "dialog-cancel"
+                enabled: daemonClient?.connected ?? false
+                onTriggered: {
+                    if (daemonClient) {
+                        daemonClient.autoProtection = !daemonClient.autoProtection;
+                    }
+                }
             }
         ]
 
@@ -44,87 +73,291 @@ Kirigami.ApplicationWindow {
             // Connection Status Banner
             Kirigami.InlineMessage {
                 Layout.fillWidth: true
-                visible: !daemonClient.connected
+                visible: daemonClient ? !daemonClient.connected : false
                 type: Kirigami.MessageType.Warning
                 text: "Not connected to Uncrash daemon. Please ensure uncrashd service is running."
             }
 
-            // Status Card
-            Kirigami.Card {
+            // Top Row: Status and Temperature Cards side by side
+            RowLayout {
                 Layout.fillWidth: true
+                spacing: Kirigami.Units.largeSpacing
 
-                header: Kirigami.Heading {
-                    text: "Current Status"
-                    level: 2
-                }
+                // Status Card
+                Kirigami.Card {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: parent.width / 2
+                    Layout.preferredHeight: Math.max(statusCardContent.implicitHeight, tempCardContent.implicitHeight) + 80
 
-                contentItem: Item {
-                    implicitHeight: statusCardContent.implicitHeight
-                    implicitWidth: statusCardContent.implicitWidth
+                    header: Kirigami.Heading {
+                        text: "Current Status"
+                        level: 2
+                    }
 
-                    ColumnLayout {
-                        id: statusCardContent
-                        width: parent.width
-                        spacing: Kirigami.Units.smallSpacing
+                    contentItem: Item {
+                        implicitHeight: statusCardContent.implicitHeight
+                        implicitWidth: statusCardContent.implicitWidth
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Kirigami.Icon {
-                                source: daemonClient.thresholdExceeded ? "data-warning" : "dialog-ok"
-                                color: daemonClient.thresholdExceeded ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.positiveTextColor
-                                implicitWidth: Kirigami.Units.iconSizes.medium
-                                implicitHeight: Kirigami.Units.iconSizes.medium
+                        ColumnLayout {
+                            id: statusCardContent
+                            width: parent.width
+                            spacing: Kirigami.Units.smallSpacing
+
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Kirigami.Icon {
+                                    source: daemonClient?.cpuLimitApplied ? "data-warning" : "dialog-ok"
+                                    color: daemonClient?.cpuLimitApplied ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.positiveTextColor
+                                    implicitWidth: Kirigami.Units.iconSizes.medium
+                                    implicitHeight: Kirigami.Units.iconSizes.medium
+                                }
+                                Controls.Label {
+                                    text: daemonClient?.cpuLimitApplied ? "⚠ CPU frequency limit is ACTIVE" : "✓ CPU running at full speed"
+                                    font.bold: true
+                                    color: daemonClient?.cpuLimitApplied ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.positiveTextColor
+                                    Layout.fillWidth: true
+                                }
                             }
-                            Controls.Label {
-                                text: daemonClient.thresholdExceeded ? "⚠ GPU power threshold exceeded - CPU throttling active" : "✓ System operating normally"
-                                font.bold: true
-                                color: daemonClient.thresholdExceeded ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.positiveTextColor
+
+                            Kirigami.Separator {
                                 Layout.fillWidth: true
                             }
-                        }
 
-                        Kirigami.Separator {
-                            Layout.fillWidth: true
+                            GridLayout {
+                                columns: 2
+                                Layout.fillWidth: true
+
+                                Controls.Label {
+                                    text: "CPU Limit Status:"
+                                    font.bold: true
+                                }
+                                Controls.Label {
+                                    text: daemonClient?.cpuLimitApplied ? "APPLIED" : "Not Applied"
+                                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2
+                                    font.bold: true
+                                    color: daemonClient?.cpuLimitApplied ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.positiveTextColor
+                                }
+
+                                Controls.Label {
+                                    text: "GPU Power:"
+                                    font.bold: true
+                                }
+                                Controls.Label {
+                                    text: (daemonClient?.gpuPower ?? 0.0).toFixed(2) + " W"
+                                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2
+                                }
+
+                                Controls.Label {
+                                    text: "GPU Threshold:"
+                                    font.bold: true
+                                }
+                                Controls.Label {
+                                    text: (daemonClient?.gpuPowerThreshold ?? 0.0).toFixed(2) + " W" + (daemonClient?.thresholdExceeded ? " (EXCEEDED)" : "")
+                                    color: daemonClient?.thresholdExceeded ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.disabledTextColor
+                                }
+
+                                Controls.Label {
+                                    text: "CPU Max Frequency:"
+                                    font.bold: true
+                                }
+                                Controls.Label {
+                                    text: (daemonClient?.currentMaxFrequency ?? 0.0).toFixed(2) + " GHz"
+                                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2
+                                }
+
+                                Controls.Label {
+                                    text: "Auto Protection:"
+                                    font.bold: true
+                                }
+                                Controls.Label {
+                                    text: daemonClient?.autoProtection ? "Enabled" : "Disabled"
+                                    color: daemonClient?.autoProtection ? Kirigami.Theme.positiveTextColor : Kirigami.Theme.neutralTextColor
+                                }
+                            }
                         }
+                    }
+                }
+
+                // Temperature Monitoring Card
+                Kirigami.Card {
+                    Layout.fillWidth: true
+                    Layout.preferredWidth: parent.width / 2
+                    Layout.preferredHeight: Math.max(statusCardContent.implicitHeight, tempCardContent.implicitHeight) + 80
+
+                    header: Kirigami.Heading {
+                        text: "Temperature & Fan Speeds"
+                        level: 2
+                    }
+
+                    contentItem: Item {
+                        implicitHeight: tempCardContent.implicitHeight
+                        implicitWidth: tempCardContent.implicitWidth
 
                         GridLayout {
+                            id: tempCardContent
+                            width: parent.width
                             columns: 2
-                            Layout.fillWidth: true
+                            columnSpacing: Kirigami.Units.largeSpacing
+                            rowSpacing: Kirigami.Units.smallSpacing
 
+                            // GPU Section
                             Controls.Label {
-                                text: "GPU Power:"
+                                text: "GPU"
                                 font.bold: true
-                            }
-                            Controls.Label {
-                                text: daemonClient.gpuPower.toFixed(2) + " W"
-                                font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2
-                            }
-
-                            Controls.Label {
-                                text: "GPU Threshold:"
-                                font.bold: true
-                            }
-                            Controls.Label {
-                                text: daemonClient.gpuPowerThreshold.toFixed(2) + " W"
-                                color: Kirigami.Theme.disabledTextColor
+                                Layout.columnSpan: 2
                             }
 
                             Controls.Label {
-                                text: "CPU Max Frequency:"
-                                font.bold: true
+                                text: "Vendor:"
                             }
                             Controls.Label {
-                                text: daemonClient.currentMaxFrequency.toFixed(2) + " GHz"
-                                font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2
+                                text: daemonClient?.gpuVendor || "Unknown"
+                                color: Kirigami.Theme.textColor
                             }
 
                             Controls.Label {
-                                text: "Auto Protection:"
-                                font.bold: true
+                                text: "Model:"
                             }
                             Controls.Label {
-                                text: daemonClient.autoProtection ? "Enabled" : "Disabled"
-                                color: daemonClient.autoProtection ? Kirigami.Theme.positiveTextColor : Kirigami.Theme.neutralTextColor
+                                text: daemonClient?.gpuName || "Unknown"
+                                wrapMode: Text.WordWrap
+                                Layout.fillWidth: true
+                            }
+
+                            Controls.Label {
+                                text: "Temperature:"
+                            }
+                            RowLayout {
+                                spacing: Kirigami.Units.smallSpacing
+                                Controls.Label {
+                                    text: (daemonClient?.gpuTemperature ?? 0).toFixed(1) + " °C"
+                                    color: daemonClient?.gpuTemperature > 80 ? Kirigami.Theme.negativeTextColor : daemonClient?.gpuTemperature > 70 ? Kirigami.Theme.neutralTextColor : Kirigami.Theme.positiveTextColor
+                                    font.bold: true
+                                }
+                                Kirigami.Icon {
+                                    source: "temperature-warm"
+                                    width: Kirigami.Units.iconSizes.small
+                                    height: width
+                                    opacity: (daemonClient?.gpuTemperature ?? 0) > 0 ? 1.0 : 0.0
+                                }
+                            }
+
+                            Controls.Label {
+                                text: "Fan Speed:"
+                            }
+                            RowLayout {
+                                spacing: Kirigami.Units.smallSpacing
+                                Controls.Label {
+                                    text: {
+                                        let speed = daemonClient?.gpuFanSpeed ?? 0;
+                                        if (speed >= 1000) {
+                                            return speed + " RPM";
+                                        } else if (speed > 0) {
+                                            return speed + " %";
+                                        } else {
+                                            return "Idle";
+                                        }
+                                    }
+                                }
+                                Kirigami.Icon {
+                                    source: "speedometer"
+                                    width: Kirigami.Units.iconSizes.small
+                                    height: width
+                                    opacity: (daemonClient?.gpuFanSpeed ?? 0) > 0 ? 1.0 : 0.0
+                                }
+                            }
+
+                            // Separator
+                            Rectangle {
+                                Layout.columnSpan: 2
+                                Layout.fillWidth: true
+                                Layout.topMargin: Kirigami.Units.smallSpacing
+                                Layout.bottomMargin: Kirigami.Units.smallSpacing
+                                height: 1
+                                color: Kirigami.Theme.separatorColor
+                            }
+
+                            // CPU Section
+                            Controls.Label {
+                                text: "CPU"
+                                font.bold: true
+                                Layout.columnSpan: 2
+                            }
+
+                            Controls.Label {
+                                text: "Temperature:"
+                            }
+                            RowLayout {
+                                spacing: Kirigami.Units.smallSpacing
+                                Controls.Label {
+                                    text: (daemonClient?.cpuTemperature ?? 0).toFixed(1) + " °C"
+                                    color: daemonClient?.cpuTemperature > 85 ? Kirigami.Theme.negativeTextColor : daemonClient?.cpuTemperature > 75 ? Kirigami.Theme.neutralTextColor : Kirigami.Theme.positiveTextColor
+                                    font.bold: true
+                                }
+                                Kirigami.Icon {
+                                    source: "temperature-warm"
+                                    width: Kirigami.Units.iconSizes.small
+                                    height: width
+                                    opacity: (daemonClient?.cpuTemperature ?? 0) > 0 ? 1.0 : 0.0
+                                }
+                            }
+
+                            Controls.Label {
+                                text: "Fan Speed:"
+                            }
+                            RowLayout {
+                                spacing: Kirigami.Units.smallSpacing
+                                Controls.Label {
+                                    text: {
+                                        let speed = daemonClient?.cpuFanSpeed ?? 0;
+                                        if (speed > 0) {
+                                            return speed + " RPM";
+                                        } else {
+                                            return "Unknown";
+                                        }
+                                    }
+                                }
+                                Kirigami.Icon {
+                                    source: "speedometer"
+                                    width: Kirigami.Units.iconSizes.small
+                                    height: width
+                                    opacity: (daemonClient?.cpuFanSpeed ?? 0) > 0 ? 1.0 : 0.0
+                                }
+                            }
+
+                            // Separator
+                            Rectangle {
+                                Layout.columnSpan: 2
+                                Layout.fillWidth: true
+                                Layout.topMargin: Kirigami.Units.smallSpacing
+                                Layout.bottomMargin: Kirigami.Units.smallSpacing
+                                height: 1
+                                color: Kirigami.Theme.separatorColor
+                            }
+
+                            // Motherboard Section
+                            Controls.Label {
+                                text: "Motherboard"
+                                font.bold: true
+                                Layout.columnSpan: 2
+                            }
+
+                            Controls.Label {
+                                text: "Temperature:"
+                            }
+                            RowLayout {
+                                spacing: Kirigami.Units.smallSpacing
+                                Controls.Label {
+                                    text: (daemonClient?.motherboardTemperature ?? 0).toFixed(1) + " °C"
+                                    color: daemonClient?.motherboardTemperature > 60 ? Kirigami.Theme.negativeTextColor : daemonClient?.motherboardTemperature > 50 ? Kirigami.Theme.neutralTextColor : Kirigami.Theme.positiveTextColor
+                                    font.bold: true
+                                }
+                                Kirigami.Icon {
+                                    source: "temperature-warm"
+                                    width: Kirigami.Units.iconSizes.small
+                                    height: width
+                                    opacity: (daemonClient?.motherboardTemperature ?? 0) > 0 ? 1.0 : 0.0
+                                }
                             }
                         }
                     }
@@ -165,9 +398,13 @@ Kirigami.ApplicationWindow {
                                 from: 50
                                 to: 300
                                 stepSize: 5
-                                value: daemonClient.gpuPowerThreshold
-                                enabled: daemonClient.connected
-                                onMoved: daemonClient.gpuPowerThreshold = value
+                                value: daemonClient?.gpuPowerThreshold ?? 100.0
+                                enabled: daemonClient?.connected ?? false
+                                onMoved: {
+                                    if (daemonClient) {
+                                        daemonClient.gpuPowerThreshold = value;
+                                    }
+                                }
 
                                 Controls.ToolTip {
                                     parent: gpuThresholdSlider.handle
@@ -180,9 +417,13 @@ Kirigami.ApplicationWindow {
                                 from: 50
                                 to: 300
                                 stepSize: 5
-                                value: daemonClient.gpuPowerThreshold
-                                enabled: daemonClient.connected
-                                onValueModified: daemonClient.gpuPowerThreshold = value
+                                value: daemonClient?.gpuPowerThreshold ?? 100.0
+                                enabled: daemonClient?.connected ?? false
+                                onValueModified: {
+                                    if (daemonClient) {
+                                        daemonClient.gpuPowerThreshold = value;
+                                    }
+                                }
                                 editable: true
                                 textFromValue: function (value) {
                                     return value + " W";
@@ -227,9 +468,13 @@ Kirigami.ApplicationWindow {
                                 from: 1.0
                                 to: 5.0
                                 stepSize: 0.1
-                                value: daemonClient.maxFrequency
-                                enabled: daemonClient.connected
-                                onMoved: daemonClient.maxFrequency = value
+                                value: daemonClient?.maxFrequency ?? 3.5
+                                enabled: daemonClient?.connected ?? false
+                                onMoved: {
+                                    if (daemonClient) {
+                                        daemonClient.maxFrequency = value;
+                                    }
+                                }
 
                                 Controls.ToolTip {
                                     parent: cpuFreqSlider.handle
@@ -242,9 +487,13 @@ Kirigami.ApplicationWindow {
                                 from: 10
                                 to: 50
                                 stepSize: 1
-                                value: daemonClient.maxFrequency * 10
-                                enabled: daemonClient.connected
-                                onValueModified: daemonClient.maxFrequency = value / 10.0
+                                value: (daemonClient?.maxFrequency ?? 3.5) * 10
+                                enabled: daemonClient?.connected ?? false
+                                onValueModified: {
+                                    if (daemonClient) {
+                                        daemonClient.maxFrequency = value / 10.0;
+                                    }
+                                }
                                 editable: true
                                 textFromValue: function (value) {
                                     return (value / 10.0).toFixed(1) + " GHz";
@@ -262,15 +511,23 @@ Kirigami.ApplicationWindow {
                             Controls.Button {
                                 text: "Apply Limit Now"
                                 icon.name: "system-run"
-                                enabled: daemonClient.connected && daemonClient.regulationEnabled
-                                onClicked: daemonClient.applyFrequencyLimit()
+                                enabled: (daemonClient?.connected ?? false) && (daemonClient?.regulationEnabled ?? false)
+                                onClicked: {
+                                    if (daemonClient) {
+                                        daemonClient.applyFrequencyLimit();
+                                    }
+                                }
                             }
 
                             Controls.Button {
                                 text: "Remove Limit Now"
                                 icon.name: "kt-restore"
-                                enabled: daemonClient.connected
-                                onClicked: daemonClient.removeFrequencyLimit()
+                                enabled: daemonClient?.connected ?? false
+                                onClicked: {
+                                    if (daemonClient) {
+                                        daemonClient.removeFrequencyLimit();
+                                    }
+                                }
                             }
 
                             Item {
@@ -279,9 +536,13 @@ Kirigami.ApplicationWindow {
 
                             Controls.Switch {
                                 text: "Enable CPU Regulation"
-                                checked: daemonClient.regulationEnabled
-                                enabled: daemonClient.connected
-                                onToggled: daemonClient.regulationEnabled = checked
+                                checked: daemonClient?.regulationEnabled ?? false
+                                enabled: daemonClient?.connected ?? false
+                                onToggled: {
+                                    if (daemonClient) {
+                                        daemonClient.regulationEnabled = checked;
+                                    }
+                                }
                             }
                         }
                     }
@@ -291,6 +552,7 @@ Kirigami.ApplicationWindow {
             // Info Card
             Kirigami.Card {
                 Layout.fillWidth: true
+                Layout.fillHeight: true
 
                 header: Kirigami.Heading {
                     text: "How It Works"
@@ -321,10 +583,6 @@ Kirigami.ApplicationWindow {
                         }
                     }
                 }
-            }
-
-            Item {
-                Layout.fillHeight: true
             }
         }
     }

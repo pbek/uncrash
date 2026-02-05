@@ -1,5 +1,6 @@
 #include "client/daemonclient.h"
 #include "settingsmanager.h"
+#include "systemtrayicon.h"
 #include "utils/cli.h"
 #include "version.h"
 #include <KLocalizedContext>
@@ -107,6 +108,9 @@ int main(int argc, char *argv[]) {
   KLocalizedString::setApplicationDomain("uncrash");
   QApplication::setWindowIcon(QIcon::fromTheme("uncrash"));
 
+  // Don't quit when last window closes - we have a tray icon
+  QApplication::setQuitOnLastWindowClosed(false);
+
   QQmlApplicationEngine engine;
 
   // Create and register SettingsManager (for GUI preferences only)
@@ -147,6 +151,42 @@ int main(int argc, char *argv[]) {
   }
 
   qDebug() << "QML loaded successfully, starting application...";
+
+  // Get the main window
+  QObject *rootObject = engine.rootObjects().first();
+  QQuickWindow *window = qobject_cast<QQuickWindow *>(rootObject);
+
+  if (!window) {
+    qCritical() << "ERROR: Root object is not a QQuickWindow";
+    return -1;
+  }
+
+  // Connect QML quit signal to actually quit the application
+  QObject::connect(rootObject, SIGNAL(quitRequested()), &app, SLOT(quit()));
+
+  // Create and setup system tray icon
+  SystemTrayIcon trayIcon(&daemonClient);
+
+  // Connect tray icon signals
+  QObject::connect(&trayIcon, &SystemTrayIcon::showWindowRequested, window,
+                   [window]() {
+                     if (window->isVisible()) {
+                       window->hide();
+                     } else {
+                       window->show();
+                       window->raise();
+                       window->requestActivate();
+                     }
+                   });
+
+  QObject::connect(&trayIcon, &SystemTrayIcon::quitRequested, &app,
+                   &QApplication::quit);
+
+  // Make tray icon accessible from QML for close-to-tray behavior
+  engine.rootContext()->setContextProperty("systemTrayIcon", &trayIcon);
+
+  // Show the tray icon
+  trayIcon.show();
 
   return app.exec();
 }
