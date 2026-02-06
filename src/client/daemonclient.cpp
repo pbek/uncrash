@@ -44,6 +44,9 @@ void DaemonClient::connectToService() {
               "CurrentMaxFrequencyChanged", this,
               SLOT(onCurrentMaxFrequencyChanged(double)));
   bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "CurrentFrequencyChanged", this,
+              SLOT(onCurrentFrequencyChanged(double)));
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
               "MaxFrequencyChanged", this, SLOT(onMaxFrequencyChanged(double)));
   bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
               "RegulationEnabledChanged", this,
@@ -51,6 +54,9 @@ void DaemonClient::connectToService() {
   bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
               "AutoProtectionChanged", this,
               SLOT(onAutoProtectionChanged(bool)));
+  bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
+              "CooldownSecondsChanged", this,
+              SLOT(onCooldownSecondsChanged(int)));
   bus.connect("org.uncrash.Daemon", "/org/uncrash/Daemon", "org.uncrash.Daemon",
               "ThresholdExceededChanged", this,
               SLOT(onThresholdExceededChanged(bool)));
@@ -124,6 +130,15 @@ void DaemonClient::setAutoProtection(bool enabled) {
   m_interface->setProperty("AutoProtection", enabled);
 }
 
+void DaemonClient::setCooldownSeconds(int seconds) {
+  if (!m_interface || !m_interface->isValid()) {
+    emit error("Not connected to daemon");
+    return;
+  }
+
+  m_interface->setProperty("CooldownSeconds", seconds);
+}
+
 void DaemonClient::applyFrequencyLimit() {
   if (!m_interface || !m_interface->isValid()) {
     emit error("Not connected to daemon");
@@ -166,9 +181,11 @@ void DaemonClient::refreshStatus() {
     m_gpuPower = status["gpuPower"].toDouble();
     m_gpuPowerThreshold = status["gpuPowerThreshold"].toDouble();
     m_currentMaxFrequency = status["currentMaxFrequency"].toDouble();
+    m_currentFrequency = status["currentFrequency"].toDouble();
     m_maxFrequency = status["maxFrequency"].toDouble();
     m_regulationEnabled = status["regulationEnabled"].toBool();
     m_autoProtection = status["autoProtection"].toBool();
+    m_cooldownSeconds = status["cooldownSeconds"].toInt();
     m_thresholdExceeded = status["thresholdExceeded"].toBool();
     m_cpuLimitApplied = status["cpuLimitApplied"].toBool();
 
@@ -184,9 +201,11 @@ void DaemonClient::refreshStatus() {
     emit gpuPowerChanged();
     emit gpuPowerThresholdChanged();
     emit currentMaxFrequencyChanged();
+    emit currentFrequencyChanged();
     emit maxFrequencyChanged();
     emit regulationEnabledChanged();
     emit autoProtectionChanged();
+    emit cooldownSecondsChanged();
     emit thresholdExceededChanged();
     emit cpuLimitAppliedChanged();
 
@@ -216,6 +235,11 @@ void DaemonClient::onCurrentMaxFrequencyChanged(double frequency) {
   emit currentMaxFrequencyChanged();
 }
 
+void DaemonClient::onCurrentFrequencyChanged(double frequency) {
+  m_currentFrequency = frequency;
+  emit currentFrequencyChanged();
+}
+
 void DaemonClient::onMaxFrequencyChanged(double frequency) {
   m_maxFrequency = frequency;
   emit maxFrequencyChanged();
@@ -229,6 +253,11 @@ void DaemonClient::onRegulationEnabledChanged(bool enabled) {
 void DaemonClient::onAutoProtectionChanged(bool enabled) {
   m_autoProtection = enabled;
   emit autoProtectionChanged();
+}
+
+void DaemonClient::onCooldownSecondsChanged(int seconds) {
+  m_cooldownSeconds = seconds;
+  emit cooldownSecondsChanged();
 }
 
 void DaemonClient::onThresholdExceededChanged(bool exceeded) {

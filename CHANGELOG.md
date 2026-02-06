@@ -1,5 +1,25 @@
 # Uncrash Changelog
 
+## 0.1.0
+
+### Added
+
+- **Current CPU Frequency Display**: Added real-time display of actual CPU frequency (not just the max limit)
+  - New `currentFrequency` property in CpuController that reads from `/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq`
+  - Exposed via DBus as `CurrentFrequency` property
+  - Displayed in main UI Status Card with highlight color for easy visibility
+  - Updates every 2 seconds alongside other metrics
+  - Shows the actual current running frequency of the CPU, useful for verifying throttling is working
+
+- **Auto-Protection Cooldown Timer**: Added configurable cooldown to prevent rapid CPU limit toggling
+  - When auto-protection applies CPU frequency limit due to high GPU power, it will wait a configurable amount of time before removing the limit
+  - Prevents rapid on/off cycling when GPU power fluctuates around the threshold
+  - Default cooldown: 5 seconds (configurable from 0-30 seconds)
+  - Cooldown slider and spinbox in "CPU Frequency Limit" card
+  - Setting cooldown to 0 disables the feature (immediate removal like before)
+  - Cooldown only applies to automatically applied limits, manual limit removal is instant
+  - Persisted in daemon settings at `/etc/uncrash/uncrash.conf`
+
 ## 0.0.6
 
 ### Fixed

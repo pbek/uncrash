@@ -7,6 +7,7 @@
 
 CpuController::CpuController(QObject *parent) : QObject(parent) {
   m_currentMaxFrequency = readCurrentMaxFrequency();
+  m_currentFrequency = readCurrentFrequency();
 
   // Set up timer to periodically update current frequency
   m_updateTimer = new QTimer(this);
@@ -153,10 +154,34 @@ double CpuController::readCurrentMaxFrequency() {
   return 0.0;
 }
 
+double CpuController::readCurrentFrequency() {
+  // Read from the first CPU core - the actual current frequency
+  QString curFreqPath = "/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq";
+  QFile file(curFreqPath);
+
+  if (file.open(QIODevice::ReadOnly)) {
+    QString freqStr = QString::fromUtf8(file.readAll()).trimmed();
+    bool ok;
+    qint64 frequencyKHz = freqStr.toLongLong(&ok);
+    if (ok) {
+      // Convert from KHz to GHz
+      return frequencyKHz / 1000000.0;
+    }
+  }
+
+  return 0.0;
+}
+
 void CpuController::updateCurrentFrequency() {
   double newFrequency = readCurrentMaxFrequency();
   if (!qFuzzyCompare(m_currentMaxFrequency, newFrequency)) {
     m_currentMaxFrequency = newFrequency;
     emit currentMaxFrequencyChanged();
+  }
+
+  double newCurFrequency = readCurrentFrequency();
+  if (!qFuzzyCompare(m_currentFrequency, newCurFrequency)) {
+    m_currentFrequency = newCurFrequency;
+    emit currentFrequencyChanged();
   }
 }

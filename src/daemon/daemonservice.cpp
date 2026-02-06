@@ -20,6 +20,8 @@ DaemonService::DaemonService(QObject *parent) : QObject(parent) {
 
   connect(m_cpuController, &CpuController::currentMaxFrequencyChanged, this,
           &DaemonService::onCurrentMaxFrequencyChanged);
+  connect(m_cpuController, &CpuController::currentFrequencyChanged, this,
+          &DaemonService::onCurrentFrequencyChanged);
   connect(m_cpuController, &CpuController::maxFrequencyChanged, this,
           &DaemonService::onMaxFrequencyChanged);
   connect(m_cpuController, &CpuController::regulationEnabledChanged, this,
@@ -29,6 +31,8 @@ DaemonService::DaemonService(QObject *parent) : QObject(parent) {
 
   connect(m_protector, &SystemProtector::autoProtectionChanged, this,
           &DaemonService::onAutoProtectionChanged);
+  connect(m_protector, &SystemProtector::cooldownSecondsChanged, this,
+          &DaemonService::onCooldownSecondsChanged);
 
   // Connect temperature monitor signals
   connect(m_temperatureMonitor, &TemperatureMonitor::gpuTemperatureChanged,
@@ -90,6 +94,10 @@ double DaemonService::currentMaxFrequency() const {
   return m_cpuController->currentMaxFrequency();
 }
 
+double DaemonService::currentFrequency() const {
+  return m_cpuController->currentFrequency();
+}
+
 double DaemonService::maxFrequency() const {
   return m_cpuController->maxFrequency();
 }
@@ -100,6 +108,10 @@ bool DaemonService::regulationEnabled() const {
 
 bool DaemonService::autoProtection() const {
   return m_protector->autoProtection();
+}
+
+int DaemonService::cooldownSeconds() const {
+  return m_protector->cooldownSeconds();
 }
 
 bool DaemonService::thresholdExceeded() const {
@@ -160,6 +172,11 @@ void DaemonService::setAutoProtection(bool enabled) {
   saveSettings();
 }
 
+void DaemonService::setCooldownSeconds(int seconds) {
+  m_protector->setCooldownSeconds(seconds);
+  saveSettings();
+}
+
 // DBus methods
 bool DaemonService::ApplyFrequencyLimit() {
   m_cpuController->applyFrequencyLimit();
@@ -178,9 +195,11 @@ QVariantMap DaemonService::GetStatus() {
   status["gpuPower"] = gpuPower();
   status["gpuPowerThreshold"] = gpuPowerThreshold();
   status["currentMaxFrequency"] = currentMaxFrequency();
+  status["currentFrequency"] = currentFrequency();
   status["maxFrequency"] = maxFrequency();
   status["regulationEnabled"] = regulationEnabled();
   status["autoProtection"] = autoProtection();
+  status["cooldownSeconds"] = cooldownSeconds();
   status["thresholdExceeded"] = thresholdExceeded();
   status["cpuLimitApplied"] = cpuLimitApplied();
 
@@ -207,6 +226,10 @@ void DaemonService::onCurrentMaxFrequencyChanged() {
   emit CurrentMaxFrequencyChanged(currentMaxFrequency());
 }
 
+void DaemonService::onCurrentFrequencyChanged() {
+  emit CurrentFrequencyChanged(currentFrequency());
+}
+
 void DaemonService::onMaxFrequencyChanged() {
   emit MaxFrequencyChanged(maxFrequency());
 }
@@ -217,6 +240,10 @@ void DaemonService::onRegulationEnabledChanged() {
 
 void DaemonService::onAutoProtectionChanged() {
   emit AutoProtectionChanged(autoProtection());
+}
+
+void DaemonService::onCooldownSecondsChanged() {
+  emit CooldownSecondsChanged(cooldownSeconds());
 }
 
 void DaemonService::onThresholdExceededChanged() {
@@ -233,10 +260,12 @@ void DaemonService::loadSettings() {
   double threshold = settings.value("gpuPowerThreshold", 100.0).toDouble();
   double frequency = settings.value("cpuMaxFrequency", 3.5).toDouble();
   bool autoProtect = settings.value("autoProtection", true).toBool();
+  int cooldown = settings.value("cooldownSeconds", 5).toInt();
 
   m_powerMonitor->setGpuPowerThreshold(threshold);
   m_cpuController->setMaxFrequency(frequency);
   m_protector->setAutoProtection(autoProtect);
+  m_protector->setCooldownSeconds(cooldown);
 
   qInfo() << "Settings loaded from /etc/uncrash/uncrash.conf";
 }
@@ -247,6 +276,7 @@ void DaemonService::saveSettings() {
   settings.setValue("gpuPowerThreshold", gpuPowerThreshold());
   settings.setValue("cpuMaxFrequency", maxFrequency());
   settings.setValue("autoProtection", autoProtection());
+  settings.setValue("cooldownSeconds", cooldownSeconds());
 
   settings.sync();
 }

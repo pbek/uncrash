@@ -166,6 +166,16 @@ Kirigami.ApplicationWindow {
                                 }
 
                                 Controls.Label {
+                                    text: "CPU Current Frequency:"
+                                    font.bold: true
+                                }
+                                Controls.Label {
+                                    text: (daemonClient?.currentFrequency ?? 0.0).toFixed(2) + " GHz"
+                                    font.pointSize: Kirigami.Theme.defaultFont.pointSize * 1.2
+                                    color: Kirigami.Theme.highlightColor
+                                }
+
+                                Controls.Label {
                                     text: "Auto Protection:"
                                     font.bold: true
                                 }
@@ -552,6 +562,70 @@ Kirigami.ApplicationWindow {
                                     }
                                 }
                             }
+                        }
+
+                        Kirigami.Separator {
+                            Layout.fillWidth: true
+                        }
+
+                        Controls.Label {
+                            text: "Auto-Protection Cooldown (prevents rapid toggling):"
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: Kirigami.Units.largeSpacing
+
+                            Controls.Slider {
+                                id: cooldownSlider
+                                Layout.fillWidth: true
+                                from: 0
+                                to: 30
+                                stepSize: 1
+                                value: daemonClient?.cooldownSeconds ?? 5
+                                enabled: daemonClient?.connected ?? false
+                                onMoved: {
+                                    if (daemonClient) {
+                                        daemonClient.cooldownSeconds = Math.round(value);
+                                    }
+                                }
+
+                                Controls.ToolTip {
+                                    parent: cooldownSlider.handle
+                                    visible: cooldownSlider.pressed
+                                    text: Math.round(cooldownSlider.value) + " seconds"
+                                }
+                            }
+
+                            Controls.SpinBox {
+                                from: 0
+                                to: 30
+                                stepSize: 1
+                                value: daemonClient?.cooldownSeconds ?? 5
+                                enabled: daemonClient?.connected ?? false
+                                onValueModified: {
+                                    if (daemonClient) {
+                                        daemonClient.cooldownSeconds = value;
+                                    }
+                                }
+                                editable: true
+                                textFromValue: function (value) {
+                                    return value + " sec";
+                                }
+                                valueFromText: function (text) {
+                                    return parseInt(text);
+                                }
+                            }
+                        }
+
+                        Controls.Label {
+                            text: "When auto-protection is active and GPU power drops below threshold, wait this many seconds before removing the CPU limit. This prevents rapid on/off cycling when GPU power fluctuates around the threshold. Set to 0 to disable cooldown."
+                            wrapMode: Text.WordWrap
+                            Layout.fillWidth: true
+                            font.pointSize: Kirigami.Theme.smallFont.pointSize
+                            color: Kirigami.Theme.disabledTextColor
                         }
                     }
                 }

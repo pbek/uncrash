@@ -18,12 +18,16 @@ class DaemonService : public QObject {
                  setGpuPowerThreshold NOTIFY GpuPowerThresholdChanged)
   Q_PROPERTY(double CurrentMaxFrequency READ currentMaxFrequency NOTIFY
                  CurrentMaxFrequencyChanged)
+  Q_PROPERTY(double CurrentFrequency READ currentFrequency NOTIFY
+                 CurrentFrequencyChanged)
   Q_PROPERTY(double MaxFrequency READ maxFrequency WRITE setMaxFrequency NOTIFY
                  MaxFrequencyChanged)
   Q_PROPERTY(bool RegulationEnabled READ regulationEnabled WRITE
                  setRegulationEnabled NOTIFY RegulationEnabledChanged)
   Q_PROPERTY(bool AutoProtection READ autoProtection WRITE setAutoProtection
                  NOTIFY AutoProtectionChanged)
+  Q_PROPERTY(int CooldownSeconds READ cooldownSeconds WRITE setCooldownSeconds
+                 NOTIFY CooldownSecondsChanged)
   Q_PROPERTY(bool ThresholdExceeded READ thresholdExceeded NOTIFY
                  ThresholdExceededChanged)
   Q_PROPERTY(
@@ -51,9 +55,11 @@ public:
   double gpuPower() const;
   double gpuPowerThreshold() const;
   double currentMaxFrequency() const;
+  double currentFrequency() const;
   double maxFrequency() const;
   bool regulationEnabled() const;
   bool autoProtection() const;
+  int cooldownSeconds() const;
   bool thresholdExceeded() const;
   bool cpuLimitApplied() const;
 
@@ -71,6 +77,7 @@ public:
   void setMaxFrequency(double frequency);
   void setRegulationEnabled(bool enabled);
   void setAutoProtection(bool enabled);
+  void setCooldownSeconds(int seconds);
 
 public slots:
   // DBus methods
@@ -83,9 +90,11 @@ signals:
   void GpuPowerChanged(double power);
   void GpuPowerThresholdChanged(double threshold);
   void CurrentMaxFrequencyChanged(double frequency);
+  void CurrentFrequencyChanged(double frequency);
   void MaxFrequencyChanged(double frequency);
   void RegulationEnabledChanged(bool enabled);
   void AutoProtectionChanged(bool enabled);
+  void CooldownSecondsChanged(int seconds);
   void ThresholdExceededChanged(bool exceeded);
   void CpuLimitAppliedChanged(bool applied);
   void FrequencyLimitApplied(double frequency);
@@ -104,9 +113,11 @@ private slots:
   void onGpuPowerChanged();
   void onGpuPowerThresholdChanged();
   void onCurrentMaxFrequencyChanged();
+  void onCurrentFrequencyChanged();
   void onMaxFrequencyChanged();
   void onRegulationEnabledChanged();
   void onAutoProtectionChanged();
+  void onCooldownSecondsChanged();
   void onThresholdExceededChanged();
   void onCpuLimitAppliedChanged();
 
