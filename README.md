@@ -45,8 +45,6 @@ nix run github:pbek/uncrash
 
 ### Option 2: Install the Service (Recommended)
 
-### Option 2: Install the Service (Recommended)
-
 Enable Uncrash as a NixOS system service for continuous protection:
 
 ```nix
