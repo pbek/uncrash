@@ -28,6 +28,7 @@
               mkOption
               mkIf
               types
+              concatStringsSep
               ;
             cfg = config.services.uncrash;
           in
@@ -42,20 +43,20 @@
               };
 
               gpuPowerThreshold = mkOption {
-                type = types.int;
-                default = 100;
+                type = types.nullOr types.int;
+                default = null;
                 description = "GPU power threshold in watts before CPU throttling is applied";
               };
 
               cpuMaxFrequency = mkOption {
-                type = types.float;
-                default = 3.5;
+                type = types.nullOr types.float;
+                default = null;
                 description = "Maximum CPU frequency in GHz when GPU threshold is exceeded";
               };
 
               autoProtection = mkOption {
-                type = types.bool;
-                default = true;
+                type = types.nullOr types.bool;
+                default = null;
                 description = "Enable automatic CPU throttling when GPU power exceeds threshold";
               };
             };
@@ -65,15 +66,25 @@
               environment.systemPackages = [ cfg.package ];
 
               # Create config directory and file
-              environment.etc."uncrash/uncrash.conf" = {
-                text = ''
-                  [General]
-                  gpuPowerThreshold=${toString cfg.gpuPowerThreshold}
-                  cpuMaxFrequency=${toString cfg.cpuMaxFrequency}
-                  autoProtection=${if cfg.autoProtection then "true" else "false"}
-                '';
-                mode = "0644";
-              };
+              environment.etc."uncrash/uncrash.conf" =
+                mkIf (cfg.gpuPowerThreshold != null || cfg.cpuMaxFrequency != null || cfg.autoProtection != null)
+                  {
+                    text =
+                      let
+                        configLines = [
+                          "[General]"
+                        ]
+                        ++ (lib.optional (
+                          cfg.gpuPowerThreshold != null
+                        ) "gpuPowerThreshold=${toString cfg.gpuPowerThreshold}")
+                        ++ (lib.optional (cfg.cpuMaxFrequency != null) "cpuMaxFrequency=${toString cfg.cpuMaxFrequency}")
+                        ++ (lib.optional (cfg.autoProtection != null)
+                          "autoProtection=${if cfg.autoProtection then "true" else "false"}"
+                        );
+                      in
+                      concatStringsSep "\n" configLines + "\n";
+                    mode = "0644";
+                  };
 
               # Enable and configure systemd service
               systemd.services.uncrashd = {
