@@ -319,6 +319,7 @@ just nix-result
 5. The app requires a display server - cannot run headless without Xvfb
 6. Version bumps need to be done in CMakeLists.txt only
 7. Use `just nix-build` to verify Nix package builds correctly after changes
+8. Never commit changes when not asked!
 
 ## Service Architecture Guidelines
 
